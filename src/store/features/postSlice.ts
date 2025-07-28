@@ -5,10 +5,21 @@ import { createAppAsyncThunk } from "../hooks";
 import { getAllPosts } from "../../services/postsService";
 
 // We should set this async with thunk
-export const fetchPosts = createAppAsyncThunk("posts/fetchPosts", async () => {
-    const data = await getAllPosts();
-    return data;
-});
+export const fetchPosts = createAppAsyncThunk(
+    "posts/fetchPosts",
+    async () => {
+        const data = await getAllPosts();
+        return data;
+    },
+    {
+        condition(arg, thunkApi) {
+            const postsStatus = selectPostsStatus(thunkApi.getState());
+            if (postsStatus !== "idle") {
+                return false;
+            }
+        },
+    }
+);
 
 interface PostsState {
     posts: Post[];
@@ -22,7 +33,7 @@ export interface Post {
     likes: number;
 }
 
-const initialState: PostsState = {
+export const initialState: PostsState = {
     posts: [],
     status: "idle",
     error: null,
