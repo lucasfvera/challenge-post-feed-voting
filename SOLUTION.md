@@ -8,6 +8,10 @@
 5. Add post slice (id, votes)
 6. Action (reducer-ish) upvoting and downvoting
 
+7. Create a thunk to load the posts async
+   - Add the extraReducer depending on the request status to update the posts
+   - Use the fetchPostsThunk only once to load the posts in the app
+
 Nice to have
 - Add new post feature (!!!)
 - Simulate fetch an use RTK Query

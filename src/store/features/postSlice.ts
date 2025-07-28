@@ -1,21 +1,31 @@
 import { createSlice, nanoid, type PayloadAction } from "@reduxjs/toolkit";
-import { POSTS } from "../../sampleData";
+// import { POSTS } from "../../sampleData";
 import type { RootState } from "../store";
+import { createAppAsyncThunk } from "../hooks";
+import { getAllPosts } from "../../services/postsService";
 
 // We should set this async with thunk
+export const fetchPosts = createAppAsyncThunk("posts/fetchPosts", async () => {
+    const data = await getAllPosts();
+    return data;
+});
 
 interface PostsState {
     posts: Post[];
+    status: "idle" | "pending" | "succeeded" | "failed";
+    error: string | null;
 }
 
-interface Post {
+export interface Post {
     id: string;
     title: string;
-    votes: number;
+    likes: number;
 }
 
 const initialState: PostsState = {
-    posts: POSTS,
+    posts: [],
+    status: "idle",
+    error: null,
 };
 
 const postSlice = createSlice({
@@ -28,7 +38,7 @@ const postSlice = createSlice({
             );
             if (!targetPost) return state;
 
-            targetPost.votes += 1;
+            targetPost.likes += 1;
             // return {
             //   posts: [...state.posts, targetPost],
             // };
@@ -39,7 +49,7 @@ const postSlice = createSlice({
             );
             if (!targetPost) return state;
 
-            targetPost.votes -= 1;
+            targetPost.likes -= 1;
             // return {
             //   posts: [...state.posts, targetPost],
             // };
@@ -54,16 +64,33 @@ const postSlice = createSlice({
                     payload: {
                         id: postId,
                         title: payload.title,
-                        votes: 0,
+                        likes: 0,
                     },
                 };
             },
         },
     },
+    extraReducers(builder) {
+        builder
+            .addCase(fetchPosts.pending, (state) => {
+                state.status = "pending";
+                // return { ...state, status: "pending" };
+            })
+            .addCase(fetchPosts.fulfilled, (state, action) => {
+                state.status = "succeeded";
+                state.posts.push(...action.payload);
+            })
+            .addCase(fetchPosts.rejected, (state, action) => {
+                state.status = "failed";
+                state.error = action.error.message ?? "Unknown Error";
+            });
+    },
 });
 
 export const { downvote, upvote, createPost } = postSlice.actions;
 
-export const selectPosts = (state: RootState) => state.posts;
+export const selectPosts = (state: RootState) => state.posts.posts;
+export const selectPostsStatus = (state: RootState) => state.posts.status;
+export const selectPostsError = (state: RootState) => state.posts.error;
 
 export default postSlice.reducer;
